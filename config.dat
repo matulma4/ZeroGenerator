@@ -1,0 +1,14 @@
+# Size of board
+x=3
+y=3
+out=4
+
+# Operations allowed
+add=True
+mult=False
+pow=False
+mod=False
+
+# Shape of operators
+long=False
+diag=False
