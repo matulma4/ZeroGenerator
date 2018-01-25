@@ -1,3 +1,5 @@
+import random
+
 
 class Config():
     def __init__(self, filename):
@@ -8,7 +10,45 @@ class Config():
                     l = line.strip().split('=')
                     self.args[l[0]] = eval(l[1])
 
+    def __getitem__(self, item):
+        return self.args[item]
+
+
+def check_neighbors(b, i, j):
+    counter = 0
+    s = []
+    t = []
+    if i >= 0:
+        s.append(-1)
+    if i < len(b)-1:
+        s.append(1)
+    if j >= 0:
+        t.append(-1)
+    if j < len(b[0])-1:
+        t.append(1)
+    for u in s:
+        for v in t:
+            if b[i+u][j+v] >= 0:
+                counter += 1
+    return counter > 1
+
+
+def generate_board(config):
+    x = random.randint(2, config["x"])
+    y = random.randint(2, config["y"])
+    b = [[0 for _ in range(y)] for _ in range(x)]
+    c = [[0 for _ in range(y)] for _ in range(x)]
+    u = 0
+    while u < config["out"]:
+        i = random.randint(0,x-1)
+        j = random.randint(0,y-1)
+        if check_neighbors(b, i, j):
+            b[i][j] = -1
+            u += 1
+    return b, c
 
 if __name__ == '__main__':
+    random.seed(43)
     c = Config("config.dat")
+    board, counter = generate_board(c)
     pass

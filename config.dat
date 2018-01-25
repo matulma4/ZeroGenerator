@@ -1,7 +1,13 @@
 # Size of board
 x=3
 y=3
-out=4
+out=1
+
+# Values
+max_add=10
+max_pow=4
+max_mult=8
+max_mod=10
 
 # Operations allowed
 add=True
