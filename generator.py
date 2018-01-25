@@ -47,8 +47,25 @@ def generate_board(config):
             u += 1
     return b, c
 
+
+def get_operators(c):
+    result = []
+    if c["add"]:
+        result += ["+", "-"]
+    if c["mult"]:
+        result += ["*", "/"]
+    if c["pow"]:
+        result += ["pow", "root"]
+    if c["mod"]:
+        result += ["%"]
+    return result
+
+
+def generate_operators(b, c, config):
+    pass
+
 if __name__ == '__main__':
     random.seed(43)
-    c = Config("config.dat")
-    board, counter = generate_board(c)
+    conf = Config("config.dat")
+    board, counter = generate_board(conf)
     pass
