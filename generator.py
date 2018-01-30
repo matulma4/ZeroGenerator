@@ -1,5 +1,6 @@
 import random
 import operator
+import math
 
 
 class Config():
@@ -23,6 +24,36 @@ class Piece():
         self.long = long
 
 
+class Element():
+    def __init__(self,i, j, x, y):
+        self.empty = False
+        self.value = 0
+        self.dirs = range(1, 10)
+        self.neighbors = []
+        if i > 0:
+            if j > 0:
+                self.neighbors.append([i-1,j-1])
+            if j < y-1:
+                self.neighbors.append([i-1,j+1])
+            self.neighbors.append([i-1, 0])
+        elif i < x-1:
+            if j > 0:
+                self.neighbors.append([i+1,j-1])
+            if j < y-1:
+                self.neighbors.append([i+1,j+1])
+            self.neighbors.append([i+1, 0])
+        else:
+            if j > 0:
+                self.neighbors.append([0,j-1])
+            if j < y-1:
+                self.neighbors.append([0,j+1])
+
+
+def is_perfect( value, exponent ):
+    root = value ** ( 1.0 / exponent )
+    root = long( round( root ) )
+    return root ** exponent  == value
+
 def check_neighbors(b, i, j, config):
     counter = 0
     s = [0]
@@ -38,10 +69,10 @@ def check_neighbors(b, i, j, config):
     for u in s:
         for v in t:
             if config["diag"]:
-                if b[i+u][j+v] >= 0 and (u != 0 or v != 0):
+                if (not math.isnan(b[i+u][j+v])) and (u != 0 or v != 0):
                     counter += 1
             else:
-                if b[i+u][j+v] >= 0 and bool(u) != bool(v):
+                if (not math.isnan(b[i+u][j+v])) and bool(u) != bool(v):
                     counter += 1
     return counter
 
@@ -57,7 +88,7 @@ def generate_board(config):
         i = random.randint(0,x-1)
         j = random.randint(0,y-1)
         if check_neighbors(b, i, j, config) > 0:
-            b[i][j] = -1
+            b[i][j] = float("nan")
             u += 1
     for i in range(len(b)):
         for j in range(len(b[0])):
@@ -81,20 +112,22 @@ def get_operators(c):
 
 def modify_board(b, i, j, op, val):
     rt = lambda x,y: x**(float(1)/float(y))
+    # TODO change range
+    m = lambda x,y: random.randint(0,5)*y + x
     # sic!
-    ops = {'+': operator.sub,'-': operator.add, '*': operator.div,'/': operator.mul,'%': operator.mod, 'pow': rt, 'root': operator.pow}
+    ops = {'+': operator.sub,'-': operator.add, '*': operator.div,'/': operator.mul,'%': m, 'pow': rt, 'root': operator.pow}
     return ops[op](b[i][j], val)
 
 
 
 def generate_operators(b, c, config):
-    ops = get_operators(c)
+    ops = get_operators(config)
     result = []
-    diff = 3 if c["long"] else 2
+    diff = 3 if config["long"] else 2
     dirs = [[0,1], [0,-1],[1,0],[-1,0]]
     dirs_diag = dirs + [[1,1], [1,-1],[1,-1],[-1,-1]]
     while True:
-        if c["diag"]:
+        if config["diag"]:
             pass
         else:
             i = random.randint(0,len(b)-1)
@@ -108,7 +141,8 @@ def generate_operators(b, c, config):
             viable = True
             for k in range(0, d):
                 try:
-                    if b[i + k*dir_x][j + k*dir_y] <= 0:
+                    # if b[i + k*dir_x][j + k*dir_y] < 0:
+                    if math.isnan(b[i + k*dir_x][j + k*dir_y]):
                         viable = False
                         break
                 except IndexError:
@@ -117,11 +151,12 @@ def generate_operators(b, c, config):
             if not viable:
                 continue
             op = ops[random.randint(0, len(ops)-1)]
-            v = random.randint(0,c["max_"+op])
+            v = random.randint(0,config["max_"+op])
             for k in range(0, d):
-                b[i + k * dir_x][j + k * dir_y] -= 1
+                b[i + k * dir_x][j + k * dir_y] = modify_board(b, i + k * dir_x, j + k * dir_y, op, v)
+                c[i + k * dir_x][j + k * dir_y] -= 1
 
-            result.append(Piece(op, v, c["diag"], c["long"]))
+            result.append(Piece(op, v, config["diag"], config["long"]))
 
 
     return result
