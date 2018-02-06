@@ -117,6 +117,14 @@ def generate_board(config):
     return b#, c
 
 
+def check_operation(val1, val2, mod_val, op):
+    if op == "*":
+        return val1 % mod_val == 0 and val2 % mod_val == 0
+    elif op == "pow":
+        return is_perfect(val1, mod_val) and is_perfect(val2, mod_val)
+
+
+
 def get_operators(c):
     result = []
     if c["add"]:
@@ -175,19 +183,19 @@ def generate_pieces(b, config):
             op = ops[random.randint(0, len(ops)-1)]
             v = random.randint(0,config["max_"+op])
             elements = [[i,j],neighbor]
-            vert = True
-            if neighbor[0] == i:
-                vert = False
-            for e in range(len(elements)):
-                el = elements[e]
-                element = b[el[0]][el[1]]
-                element.neighbors.remove(elements[e-1])
-                element.value = modify_board(element, op, v)
-            result.append(Piece(op, v, vert, config["diag"], config["long"]))
+            if check_operation(b[i][j], b[neighbor[0]][neighbor[1]],v,op):
+                vert = True
+                if neighbor[0] == i:
+                    vert = False
+                for e in range(len(elements)):
+                    el = elements[e]
+                    element = b[el[0]][el[1]]
+                    element.neighbors.remove(elements[e-1])
+                    element.value = modify_board(element, op, v)
+                result.append(Piece(op, v, vert, config["diag"], config["long"]))
     return result
 
-
-
+# Deprecated
 def generate_operators(b, config):
     ops = get_operators(config)
     result = []
