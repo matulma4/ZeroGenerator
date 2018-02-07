@@ -4,7 +4,7 @@ import math
 import datetime
 
 
-class Config():
+class Config:
     def __init__(self, filename):
         self.args = {}
         with open(filename) as f:
@@ -17,7 +17,7 @@ class Config():
         return self.args[item]
 
 
-class Piece():
+class Piece:
     def __init__(self, op, val, vert, diag, long):
         self.val = val
         self.op = op
@@ -37,6 +37,8 @@ class Element():
         self.value = 0
         self.dirs = range(1, 10)
         self.neighbors = []
+        self.i = i
+        self.j = j
         if i > 0:
             if j > 0 and diag:
                 self.neighbors.append([i-1,j-1])
@@ -49,7 +51,6 @@ class Element():
             if j < y-1 and diag:
                 self.neighbors.append([i+1,j+1])
             self.neighbors.append([i+1, j])
-        # else:
         if j > 0:
             self.neighbors.append([i,j-1])
         if j < y-1:
@@ -111,11 +112,8 @@ def generate_board(config):
             for s,t in b[i][j].neighbors:
                 b[s][t].neighbors.remove([i,j])
             u += 1
-    # for i in range(len(b)):
-    #     for j in range(len(b[0])):
-    #         c[i][j] = check_neighbors(b, i, j, config)
 
-    return b#, c
+    return b
 
 
 def check_operation(val1, val2, mod_val, op):
@@ -198,47 +196,16 @@ def generate_pieces(b, config):
                 result.append(Piece(op, v, vert, config["diag"], config["long"]))
     return result
 
-# Deprecated
-def generate_operators(b, config):
-    ops = get_operators(config)
-    result = []
-    diff = 3 if config["long"] else 2
-    dirs = [[0,1], [0,-1],[1,0],[-1,0]]
-    dirs_diag = dirs + [[1,1], [1,-1],[1,-1],[-1,-1]]
-    while True:
-        if config["diag"]:
-            pass
-        else:
-            i = random.randint(0,len(b)-1)
-            j = random.randint(0,len(b[0])-1)
-            if b[i][j].empty:
-                continue
-            dir = dirs[random.randint(0,len(dirs)-1)]
-            dir_x = dir[0]
-            dir_y = dir[1]
-            d = random.randint(2, diff)
-            viable = True
-            for k in range(0, d):
-                try:
-                    # if b[i + k*dir_x][j + k*dir_y] < 0:
-                    if math.isnan(b[i + k*dir_x][j + k*dir_y]):
-                        viable = False
-                        break
-                except IndexError:
-                    viable = False
-                    break
-            if not viable:
-                continue
-            op = ops[random.randint(0, len(ops)-1)]
-            v = random.randint(0,config["max_"+op])
-            for k in range(0, d):
-                b[i + k * dir_x][j + k * dir_y] = modify_board(b, i + k * dir_x, j + k * dir_y, op, v)
-                # c[i + k * dir_x][j + k * dir_y] -= 1
 
-            # result.append(Piece(op, v, config["diag"], config["long"]))
+def write_result(fname, result, b):
+    with open(fname, "w") as g:
+        for e in range(len(b)):
+            for f in range(len(b[0])):
+                el = b[e][f]
+                g.write(",".join([str(el.i), str(el.j), str(el.value), str(el.empty)]) + "\n")
 
-
-    return result
+        for piece in result:
+            g.write(",".join([str(piece.op), str(piece.val), str(piece.vert), str(piece.diag), str(piece.long)]) + "\n")
 
 
 if __name__ == '__main__':
@@ -246,3 +213,4 @@ if __name__ == '__main__':
     conf = Config("config.dat")
     board = generate_board(conf)
     pieces = generate_pieces(board, conf)
+    write_result("test.csv", pieces, board)
