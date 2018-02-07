@@ -1,6 +1,7 @@
 import random
 import operator
 import math
+import datetime
 
 
 class Config():
@@ -42,7 +43,7 @@ class Element():
             if j < y-1 and diag:
                 self.neighbors.append([i-1,j+1])
             self.neighbors.append([i-1, j])
-        elif i < x-1:
+        if i < x-1:
             if j > 0 and diag:
                 self.neighbors.append([i+1,j-1])
             if j < y-1 and diag:
@@ -122,6 +123,8 @@ def check_operation(val1, val2, mod_val, op):
         return val1 % mod_val == 0 and val2 % mod_val == 0
     elif op == "pow":
         return is_perfect(val1, mod_val) and is_perfect(val2, mod_val)
+    else:
+        return True
 
 
 
@@ -181,7 +184,7 @@ def generate_pieces(b, config):
             if not check_viable(b, d, i, j, neighbor[0], neighbor[1]):
                 continue
             op = ops[random.randint(0, len(ops)-1)]
-            v = random.randint(0,config["max_"+op])
+            v = random.randint(1,config["max_"+op])
             elements = [[i,j],neighbor]
             if check_operation(b[i][j], b[neighbor[0]][neighbor[1]],v,op):
                 vert = True
@@ -239,7 +242,7 @@ def generate_operators(b, config):
 
 
 if __name__ == '__main__':
-    random.seed(44)
+    random.seed(datetime.datetime.now())
     conf = Config("config.dat")
     board = generate_board(conf)
     pieces = generate_pieces(board, conf)
