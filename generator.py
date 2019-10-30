@@ -1,5 +1,4 @@
 import datetime
-import math
 import operator
 import random
 
@@ -32,7 +31,7 @@ class Piece:
         return a + self.op + " " + str(self.val)
 
 
-class Element():
+class Element:
     def __init__(self, i, j, x, y, diag):
         self.empty = False
         self.used = False
@@ -59,8 +58,8 @@ class Element():
             self.neighbors.append([i, j + 1])
 
     def check_neighbors(self, b):
-        for n in self.neighbors:
-            if len(b[n[0]][n[1]].neighbors) <= 1:
+        for m, n in self.neighbors:
+            if len(b[m][n].neighbors) <= 1:
                 return False
         return True
 
@@ -77,27 +76,27 @@ def is_perfect(value, exponent):
     return root ** exponent == value
 
 
-def check_neighbors(b, i, j, config):
-    counter = 0
-    s = [0]
-    t = [0]
-    if i > 0:
-        s.append(-1)
-    if i < len(b) - 1:
-        s.append(1)
-    if j > 0:
-        t.append(-1)
-    if j < len(b[0]) - 1:
-        t.append(1)
-    for u in s:
-        for v in t:
-            if config["diag"]:
-                if (not math.isnan(b[i + u][j + v])) and (u != 0 or v != 0):
-                    counter += 1
-            else:
-                if (not math.isnan(b[i + u][j + v])) and bool(u) != bool(v):
-                    counter += 1
-    return counter
+# def check_neighbors(b, i, j, config):
+#     counter = 0
+#     s = [0]
+#     t = [0]
+#     if i > 0:
+#         s.append(-1)
+#     if i < len(b) - 1:
+#         s.append(1)
+#     if j > 0:
+#         t.append(-1)
+#     if j < len(b[0]) - 1:
+#         t.append(1)
+#     for u in s:
+#         for v in t:
+#             if config["diag"]:
+#                 if (not math.isnan(b[i + u][j + v])) and (u != 0 or v != 0):
+#                     counter += 1
+#             else:
+#                 if (not math.isnan(b[i + u][j + v])) and bool(u) != bool(v):
+#                     counter += 1
+#     return counter
 
 
 def generate_board(config):
@@ -105,16 +104,20 @@ def generate_board(config):
     y = random.randint(2, config["y"])
     b = [[Element(i, j, x, y, config["diag"]) for j in range(y)] for i in range(x)]
     u = 0
-    while u < config["out"]:
+    to_clear = [(i, j) for j in range(y) for i in range(x)]
+    while u < config["out"] and len(to_clear) > 0:
         # TODO fix infinite loop
-        i = random.randint(0, x - 1)
-        j = random.randint(0, y - 1)
+        c_index = random.randint(0, len(to_clear) - 1)
+        i, j = to_clear[c_index]
+        # i = cl[0]
+        # j = cl[1]
         if b[i][j].check_neighbors(b):
             b[i][j].empty = True
             for s, t in b[i][j].neighbors:
                 b[s][t].neighbors.remove([i, j])
             u += 1
-
+        # else:
+        to_clear = to_clear[:c_index] + to_clear[c_index + 1:]
     return b
 
 
@@ -122,9 +125,11 @@ def check_operation(val1, val2, mod_val, op):
     if op == "*":
         return val1 % mod_val == 0 and val2 % mod_val == 0 and (val1 != 0 or val2 != 0)
     elif op == "/":
-        return val1 != 0 and val2 != 0
+        return val1 != 0 or val2 != 0
     elif op == "pow":
-        return is_perfect(val1, mod_val) and is_perfect(val2, mod_val)
+        if val1 < 0 or val2 < 0:
+            return False
+        return is_perfect(val1, mod_val) and is_perfect(val2, mod_val) and (val1 != 0 or val2 != 0)
     else:
         return True
 
@@ -154,6 +159,24 @@ def check_viable(b, d, i, j, s, t):
     return True
 
 
+def get_diag(a, c, b, d):
+    #       [a,c]        [b,d]
+    # [b,d]        [a,c]
+
+    #       [a,c]          [b,d]
+    #             [b,d]          [a,c]
+    r = a > b
+    s = c > d
+    # /
+    # a < b & c > d | a > b & c < d
+    # \
+    # a < b & c < d | a > b & c > d
+    if (not r and s) or (r and not s):
+        return True
+    if (not r and not s) or (r and s):
+        return False
+
+
 def modify_board(element, op, val):
     rt = lambda x, y: x ** (float(1) / float(y))
     # TODO change range
@@ -161,7 +184,7 @@ def modify_board(element, op, val):
     # sic!
     ops = {'+': operator.sub, '-': operator.add, '*': operator.div, '/': operator.mul, '%': m, 'pow': rt,
            'root': operator.pow}
-    return ops[op](element.value, val)
+    return int(ops[op](element.value, val))
 
 
 def generate_pieces(b, config):
@@ -180,21 +203,22 @@ def generate_pieces(b, config):
                 b[i][j].used = True
                 continue
             d = random.randint(2, diff)
-            neighbor = b[i][j].neighbors[random.randint(0, len(b[i][j].neighbors) - 1)]
-            if not check_viable(b, d, i, j, neighbor[0], neighbor[1]):
+            m, n = b[i][j].neighbors[random.randint(0, len(b[i][j].neighbors) - 1)]
+            if not check_viable(b, d, i, j, m, n):
                 continue
             op = ops[random.randint(0, len(ops) - 1)]
             min_val = 1
-            if op == "*" or op == "/":
+            if op == "*" or op == "/" or op == "pow" or op == "root":
                 min_val = 2
             v = random.randint(min_val, config["max_" + op])
-            elements = [[i, j], neighbor]
-            if check_operation(b[i][j].value, b[neighbor[0]][neighbor[1]].value, v, op):
-                vert = False if neighbor[0] == i else True
+            elements = [[i, j], [m, n]]
+            if check_operation(b[i][j].value, b[m][n].value, v, op):
+                vert = False if m == i else True
                 diag = False
                 long_piece = False if diff == 2 else True
-                if neighbor[0] != i and neighbor[1] != j:
+                if m != i and n != j:
                     diag = True
+                    vert = get_diag(m, n, i, j)
                 for e in range(len(elements)):
                     el = elements[e]
                     element = b[el[0]][el[1]]
@@ -204,6 +228,7 @@ def generate_pieces(b, config):
                     # if r > 2:
                     #     covered -= 1
                     #     b[el[0]][el[1]].used = True
+                print i, j, m, n
                 result.append(Piece(op, v, vert, diag, long_piece))
     return result
 

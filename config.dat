@@ -1,20 +1,23 @@
 # Size of board
 x=3
-y=3
-out=1
+y=4
+out=2
 
 # Values
-max_add=10
+max_+=10
+max_-=10
 max_pow=4
-max_mult=8
-max_mod=10
+max_root=2
+max_*=8
+max_/=8
+max_%=10
 
 # Operations allowed
 add=True
-mult=False
+mult=True
 pow=False
 mod=False
 
 # Shape of operators
 long=False
-diag=False
+diag=True
